@@ -247,19 +247,20 @@ const WATCHLIST = [
 const SB = {reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',util:'badge-util',other:'badge-other'};
 const SL = {reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',util:'UTIL',other:'HOLD'};
 
-// Dividend reference data (historical/estimated — for reference only)
+// Dividend reference data — updated Aug 2026
+// exDate/payDate = most recently declared; freq reflects actual 2026 payment cadence
 const DIVS = {
-  BDO:   {freq:'Semi-annual', amount:1.50, exDate:'2025-06-20', payDate:'2025-07-04', yield:null},
-  AREIT: {freq:'Quarterly',   amount:0.37, exDate:'2025-06-27', payDate:'2025-07-11', yield:null},
-  RFM:   {freq:'Annual',      amount:0.05, exDate:'2025-06-13', payDate:'2025-06-27', yield:null},
-  RCR:   {freq:'Quarterly',   amount:0.17, exDate:'2025-06-27', payDate:'2025-07-11', yield:null},
-  DDMPR: {freq:'Quarterly',   amount:0.0144,exDate:'2025-06-27',payDate:'2025-07-11',yield:null},
-  VREIT: {freq:'Quarterly',   amount:0.018,exDate:'2025-06-27', payDate:'2025-07-11', yield:null},
-  VLL:   {freq:'Annual',      amount:0.03, exDate:'2025-10-10', payDate:'2025-10-24', yield:null},
-  DNL:   {freq:'Semi-annual', amount:0.07, exDate:'2025-09-19', payDate:'2025-10-03', yield:null},
-  LTG:   {freq:'Semi-annual', amount:0.35, exDate:'2025-06-06', payDate:'2025-06-20', yield:null},
-  SGP:   {freq:'Annual',      amount:1.20, exDate:'2026-02-27', payDate:'2026-03-13', yield:null},
-  MYNLD: {freq:'Annual',      amount:0.20, exDate:'2026-05-15', payDate:'2026-05-29', yield:null},
+  BDO:   {freq:'Quarterly',   amount:1.10,    exDate:'2026-09-11', payDate:'2026-09-25', yield:null},
+  AREIT: {freq:'Quarterly',   amount:0.6300,  exDate:'2026-08-24', payDate:'2026-09-09', yield:null},
+  RFM:   {freq:'Quarterly',   amount:0.08903, exDate:'2026-07-07', payDate:'2026-07-31', yield:null},
+  RCR:   {freq:'Quarterly',   amount:0.1117,  exDate:'2026-08-25', payDate:'2026-09-02', yield:null},
+  DDMPR: {freq:'Quarterly',   amount:0.02425, exDate:'2026-07-30', payDate:'2026-08-27', yield:null},
+  VREIT: {freq:'Quarterly',   amount:0.0380,  exDate:'2026-05-22', payDate:'2026-05-29', yield:null},
+  VLL:   {freq:'Annual',      amount:0.1176,  exDate:'2026-01-15', payDate:'2026-02-06', yield:null},
+  DNL:   {freq:'Annual',      amount:0.1820,  exDate:'2026-06-22', payDate:'2026-07-08', yield:null},
+  LTG:   {freq:'Quarterly',   amount:0.30,    exDate:'2026-09-07', payDate:'2026-09-18', yield:null},
+  SGP:   {freq:'Quarterly',   amount:0.3474,  exDate:'2026-07-07', payDate:'2026-07-24', yield:null},
+  MYNLD: {freq:'Annual',      amount:1.14,    exDate:'2026-03-06', payDate:'2026-03-18', yield:null},
 };
 
 // News keywords per ticker
