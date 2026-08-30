@@ -40,6 +40,7 @@ function get(url) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         'Accept': 'application/json, text/html, application/xhtml+xml',
+        'Referer': 'https://www.investagrams.com/',
       },
       timeout: 10000,
     }, res => {
@@ -52,38 +53,44 @@ function get(url) {
   });
 }
 
-// ── Quotes via phisix-api (live PSE data) ────────────────────────────────
-async function fetchQuotes() {
-  const raw = await get('https://phisix-api3.appspot.com/stocks.json');
-  const data = JSON.parse(raw);
-  const result = {};
+// ── Quotes via Investagrams (live PSE data) ──────────────────────────────
+const WATCHLIST_TICKERS = WATCHLIST.map(s => s.ticker);
 
-  // Map phisix stocks to our format
-  for (const s of (data.stocks || [])) {
-    const price = s.price?.amount ?? 0;
-    const pctChg = s.percentChange ?? 0;
-    // prevClose = price / (1 + pctChg/100)
-    const prevClose = pctChg !== -100 ? price / (1 + pctChg / 100) : price;
-    const change = price - prevClose;
-
-    result[s.symbol] = {
-      symbol: s.symbol,
-      shortName: s.name,
-      regularMarketPrice: price,
-      regularMarketChange: change,
-      regularMarketChangePercent: pctChg,
-      regularMarketVolume: s.volume ?? 0,
-      // phisix doesn't provide 52W/day range — omit gracefully
-      fiftyTwoWeekLow: null,
+async function fetchOneStock(ticker) {
+  try {
+    const raw = await get(`https://webapi.investagrams.com/InvestaApi/Stock/ViewStock?stockCode=${ticker}&exchangeType=0`);
+    const data = JSON.parse(raw);
+    const h = data.LatestStockHistory;
+    if (!h) return null;
+    return [ticker, {
+      regularMarketPrice:        h.Last ?? h.Close ?? 0,
+      regularMarketChange:       h.Change ?? 0,
+      regularMarketChangePercent:h.ChangePercentage ?? 0,
+      regularMarketVolume:       h.Volume ?? 0,
+      regularMarketDayLow:       h.Low ?? null,
+      regularMarketDayHigh:      h.High ?? null,
+      open:                      h.Open ?? null,
+      marketCap:                 h.MarketCap ?? '',
+      netForeign:                h.NetForeign ?? 0,
+      lastUpdate:                h.LastUpdateTime ?? '',
+      marketStatus:              data.MarketTradingStatus ?? '',
+      // 52W not available from this endpoint
+      fiftyTwoWeekLow:  null,
       fiftyTwoWeekHigh: null,
-      regularMarketDayLow: null,
-      regularMarketDayHigh: null,
-      asOf: data.as_of,
-    };
+    }];
+  } catch (_) {
+    return null;
+  }
+}
+
+async function fetchQuotes() {
+  const pairs = await Promise.all(WATCHLIST_TICKERS.map(fetchOneStock));
+  const result = {};
+  for (const p of pairs) {
+    if (p) result[p[0]] = p[1];
   }
 
-  // Try to get PSEi from phisix (it's sometimes included as 'PSEi')
-  // Fallback: fetch PSEi separately
+  // PSEi via phisix (Investagrams doesn't expose index freely)
   try {
     const piRaw = await get('https://phisix-api3.appspot.com/stocks/PSEi.json');
     const piData = JSON.parse(piRaw);
@@ -98,7 +105,7 @@ async function fetchQuotes() {
         regularMarketChangePercent: pct,
       };
     }
-  } catch(_) {}
+  } catch (_) {}
 
   return result;
 }
@@ -218,6 +225,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .badge-fmcg{background:rgba(0,200,150,.2);color:var(--green)}
 .badge-prop{background:rgba(124,92,252,.2);color:var(--accent2)}
 .badge-other{background:rgba(123,130,160,.2);color:var(--muted)}
+.badge-util{background:rgba(14,165,233,.2);color:#0ea5e9}
 .divider{height:1px;background:var(--border);margin:16px 0}
 .gl-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 .gl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
@@ -306,10 +314,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="tab-btn" onclick="filterNews('DNL')"   data-tab="DNL">DNL</button>
         <button class="tab-btn" onclick="filterNews('LTG')"   data-tab="LTG">LTG</button>
         <button class="tab-btn" onclick="filterNews('SGP')"   data-tab="SGP">SGP</button>
+        <button class="tab-btn" onclick="filterNews('MYNLD')" data-tab="MYNLD">MYNLD</button>
       </div>
     </div>
     <div class="news-feed" id="news-feed"><div class="news-loading">⟳ Loading news...</div></div>
-    <div class="footer">Prices via Yahoo Finance · News: BusinessWorld, Inquirer, PhilStar, Manila Bulletin · ~15 min delayed</div>
+    <div class="footer">Prices via Investagrams · PSEi via phisix-api · News: BusinessWorld, Inquirer, PhilStar, Manila Bulletin</div>
   </div>
 </div>
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
@@ -322,19 +331,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 </div>
 <script>
 const WATCHLIST=[
-  {ticker:'BDO',  yf:'BDO',   name:'BDO Unibank',        sector:'bank', color:'#4f7cff'},
-  {ticker:'AREIT',yf:'AREIT', name:'Ayala REIT',          sector:'reit', color:'#7c5cfc'},
-  {ticker:'RFM',  yf:'RFM',   name:'RFM Corporation',     sector:'fmcg', color:'#00c896'},
-  {ticker:'RCR',  yf:'RCR',   name:'RL Commercial REIT',  sector:'reit', color:'#7c5cfc'},
-  {ticker:'DDMPR',yf:'DDMPR', name:'DoubleDragon REIT',   sector:'reit', color:'#7c5cfc'},
-  {ticker:'VREIT',yf:'VREIT', name:'Villar REIT',         sector:'reit', color:'#7c5cfc'},
-  {ticker:'VLL',  yf:'VLL',   name:'Vista Land',          sector:'prop', color:'#f5c542'},
-  {ticker:'DNL',  yf:'DNL',   name:'D&L Industries',      sector:'fmcg', color:'#00c896'},
-  {ticker:'LTG',  yf:'LTG',   name:'LT Group',            sector:'other',color:'#ff7043'},
-  {ticker:'SGP',  yf:'SGP',   name:'Synergy Grid & Dev.', sector:'other',color:'#26c6da'},
+  {ticker:'BDO',  yf:'BDO',   name:'BDO Unibank',         sector:'bank', color:'#4f7cff'},
+  {ticker:'AREIT',yf:'AREIT', name:'Ayala REIT',           sector:'reit', color:'#7c5cfc'},
+  {ticker:'RFM',  yf:'RFM',   name:'RFM Corporation',      sector:'fmcg', color:'#00c896'},
+  {ticker:'RCR',  yf:'RCR',   name:'RL Commercial REIT',   sector:'reit', color:'#5cb8ff'},
+  {ticker:'DDMPR',yf:'DDMPR', name:'DoubleDragon REIT',    sector:'reit', color:'#7c5cfc'},
+  {ticker:'VREIT',yf:'VREIT', name:'Villar REIT',          sector:'reit', color:'#b05cfc'},
+  {ticker:'VLL',  yf:'VLL',   name:'Vista Land',           sector:'prop', color:'#f5c542'},
+  {ticker:'DNL',  yf:'DNL',   name:'D&L Industries',       sector:'fmcg', color:'#00c896'},
+  {ticker:'LTG',  yf:'LTG',   name:'LT Group',             sector:'other',color:'#ff7043'},
+  {ticker:'SGP',  yf:'SGP',   name:'Synergy Grid & Dev.',  sector:'other',color:'#26c6da'},
+  {ticker:'MYNLD',yf:'MYNLD', name:'Maynilad Water',        sector:'util', color:'#0ea5e9'},
 ];
-const SB={reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',other:'badge-other'};
-const SL={reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',other:'HOLD'};
+const SB={reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',other:'badge-other',util:'badge-util'};
+const SL={reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',other:'HOLD',util:'UTIL'};
 let allNews=[],priceData={},currentTab='all';
 
 function fmt(n,d=2){return n==null||isNaN(n)?'—':Number(n).toLocaleString('en-PH',{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -396,8 +406,9 @@ const KW={
   RFM:['RFM','RFM Corp','Cosmos'],RCR:['RCR','RL Commercial','Robinsons Land'],
   DDMPR:['DDMPR','DoubleDragon'],VREIT:['VREIT','Villar REIT'],
   VLL:['VLL','Vista Land','Brittany','Camella'],DNL:['DNL','D&L Industries'],
-  LTG:['LTG','LT Group','Lucio Tan','Philippine Airlines','PAL'],
+  LTG:['LTG','LT Group','Lucio Tan','Philippine Airlines','PAL','Tanduay','Asia Brewery','PNB'],
   SGP:['SGP','Synergy Grid','National Grid'],
+  MYNLD:['MYNLD','Maynilad','MWSS','water concessionaire'],
 };
 function matches(a,t){const h=(a.title+' '+a.excerpt).toLowerCase();return(KW[t]||[t]).some(k=>h.includes(k.toLowerCase()))}
 
@@ -424,25 +435,29 @@ function openModal(ticker){
   document.getElementById('modal-title').textContent=\`\${ticker} — \${s.name}\`;
   document.getElementById('modal-sub').textContent=\`\${SL[s.sector]} · PSE\`;
   const p=q.regularMarketPrice,c=q.regularMarketChange,cp=q.regularMarketChangePercent;
+  const nfSign=q.netForeign>0?'+':'';
   document.getElementById('modal-content').innerHTML=\`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
-      <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">PRICE</div>
-        <div style="font-size:26px;font-weight:700">₱\${fmt(p)}</div>
-        <div style="font-size:14px;font-weight:600" class="\${cc(c)}">\${sg(c)}\${fmt(c)} (\${sg(cp)}\${fmt(cp)}%)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="background:var(--card2);border-radius:10px;padding:14px;grid-column:1/-1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">LAST PRICE</div>
+        <div style="font-size:28px;font-weight:700">₱\${fmt(p)}</div>
+        <div style="font-size:15px;font-weight:600;margin-top:2px" class="\${cc(c)}">\${sg(c)}\${fmt(c)} (\${sg(cp)}\${fmt(cp)}%)</div>
       </div>
       <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">DAY RANGE</div>
-        <div style="font-size:15px;font-weight:600">₱\${fmt(q.regularMarketDayLow)} – ₱\${fmt(q.regularMarketDayHigh)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">DAY RANGE</div>
+        <div style="font-size:13px"><span style="color:var(--muted)">Open</span> ₱\${fmt(q.open)}</div>
+        <div style="font-size:13px;margin-top:4px"><span style="color:var(--muted)">Low</span> ₱\${fmt(q.regularMarketDayLow)} &nbsp;<span style="color:var(--muted)">High</span> ₱\${fmt(q.regularMarketDayHigh)}</div>
       </div>
       <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">52W RANGE</div>
-        <div style="font-size:15px;font-weight:600">₱\${fmt(q.fiftyTwoWeekLow)} – ₱\${fmt(q.fiftyTwoWeekHigh)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">VOLUME &amp; MARKET CAP</div>
+        <div style="font-size:13px"><span style="color:var(--muted)">Vol</span> \${fmtV(q.regularMarketVolume)}</div>
+        <div style="font-size:13px;margin-top:4px"><span style="color:var(--muted)">MCap</span> ₱\${q.marketCap||'—'}</div>
       </div>
     </div>
     <div style="background:var(--card2);border-radius:10px;padding:14px;margin-bottom:20px">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">VOLUME</div>
-      <div style="font-size:20px;font-weight:700">\${fmtV(q.regularMarketVolume)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">NET FOREIGN (today)</div>
+      <div style="font-size:18px;font-weight:700" class="\${cc(q.netForeign)}">\${nfSign}₱\${fmtV(Math.abs(q.netForeign))}</div>
+      \${q.lastUpdate?'<div style="font-size:11px;color:var(--muted);margin-top:4px">As of '+q.lastUpdate.replace('T',' ')+'</div>':''}
     </div>
     <div class="section-title">Related News</div>
     \${allNews.filter(a=>matches(a,ticker)).slice(0,5).map(a=>\`
@@ -495,6 +510,11 @@ http.createServer(async (req, res) => {
         fiftyTwoWeekHigh:          q.fiftyTwoWeekHigh,
         regularMarketDayLow:       q.regularMarketDayLow,
         regularMarketDayHigh:      q.regularMarketDayHigh,
+        open:                      q.open,
+        marketCap:                 q.marketCap,
+        netForeign:                q.netForeign,
+        lastUpdate:                q.lastUpdate,
+        marketStatus:              q.marketStatus,
       };
     }
     cors();
