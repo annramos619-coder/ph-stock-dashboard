@@ -7,16 +7,17 @@ const https = require('https');
 const PORT = 8888;
 
 const WATCHLIST = [
-  { ticker: 'BDO',   yf: 'BDO.PS',   name: 'BDO Unibank',          sector: 'bank',  color: '#4f7cff' },
-  { ticker: 'AREIT', yf: 'AREIT.PS',  name: 'Ayala REIT',           sector: 'reit',  color: '#7c5cfc' },
-  { ticker: 'RFM',   yf: 'RFM.PS',   name: 'RFM Corporation',       sector: 'fmcg',  color: '#00c896' },
-  { ticker: 'RCR',   yf: 'RCR.PS',   name: 'RL Commercial REIT',    sector: 'reit',  color: '#7c5cfc' },
-  { ticker: 'DDMPR', yf: 'DDMPR.PS', name: 'DoubleDragon REIT',     sector: 'reit',  color: '#7c5cfc' },
-  { ticker: 'VREIT', yf: 'VREIT.PS', name: 'Villar REIT',           sector: 'reit',  color: '#7c5cfc' },
-  { ticker: 'VLL',   yf: 'VLL.PS',   name: 'Vista Land',            sector: 'prop',  color: '#f5c542' },
-  { ticker: 'DNL',   yf: 'DNL.PS',   name: 'D&L Industries',        sector: 'fmcg',  color: '#00c896' },
-  { ticker: 'LTG',   yf: 'LTG.PS',   name: 'LT Group',              sector: 'other', color: '#ff7043' },
-  { ticker: 'SGP',   yf: 'SGP.PS',   name: 'Synergy Grid & Dev.',   sector: 'other', color: '#26c6da' },
+  { ticker: 'BDO',   yf: 'BDO',   name: 'BDO Unibank',          sector: 'bank',  color: '#4f7cff' },
+  { ticker: 'AREIT', yf: 'AREIT', name: 'Ayala REIT',           sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'RFM',   yf: 'RFM',   name: 'RFM Corporation',      sector: 'fmcg',  color: '#00c896' },
+  { ticker: 'RCR',   yf: 'RCR',   name: 'RL Commercial REIT',   sector: 'reit',  color: '#5cb8ff' },
+  { ticker: 'DDMPR', yf: 'DDMPR', name: 'DoubleDragon REIT',    sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'VREIT', yf: 'VREIT', name: 'Villar REIT',          sector: 'reit',  color: '#b05cfc' },
+  { ticker: 'VLL',   yf: 'VLL',   name: 'Vista Land',           sector: 'prop',  color: '#f5c542' },
+  { ticker: 'DNL',   yf: 'DNL',   name: 'D&L Industries',       sector: 'fmcg',  color: '#00c896' },
+  { ticker: 'LTG',   yf: 'LTG',   name: 'LT Group',             sector: 'other', color: '#ff7043' },
+  { ticker: 'SGP',   yf: 'SGP',   name: 'Synergy Grid & Dev.',  sector: 'other', color: '#26c6da' },
+  { ticker: 'MYNLD', yf: 'MYNLD', name: 'Maynilad Water',       sector: 'util',  color: '#0ea5e9' },
 ];
 
 const NEWS_FEEDS = [
