@@ -1,0 +1,6 @@
+{
+  "name": "ph-stock-dashboard",
+  "version": "1.0.0",
+  "description": "Real-time Philippine Stock Exchange dashboard",
+  "engines": { "node": ">=18" }
+}

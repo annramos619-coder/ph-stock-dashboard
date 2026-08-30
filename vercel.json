@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/quotes", "destination": "/api/quotes" },
+    { "source": "/api/news",   "destination": "/api/news"   },
+    { "source": "/(.*)",       "destination": "/index.html" }
+  ]
+}

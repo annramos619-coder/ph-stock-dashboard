@@ -1,0 +1,621 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PH Stock Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #21253a;
+    --border: #2a2f45;
+    --text: #e8eaf0;
+    --muted: #7b82a0;
+    --green: #00c896;
+    --red: #ff4d6a;
+    --accent: #4f7cff;
+    --accent2: #7c5cfc;
+    --yellow: #f5c542;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #151929 0%, #1a1d2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .logo span { font-size: 12px; -webkit-text-fill-color: var(--muted); font-weight: 400; display: block; }
+  .psei-chip {
+    background: var(--card2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .psei-chip .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .psei-chip .value { font-size: 18px; font-weight: 700; }
+  .psei-chip .change { font-size: 13px; font-weight: 600; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .last-update { font-size: 12px; color: var(--muted); }
+  .refresh-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer; font-weight: 600;
+    display: flex; align-items: center; gap: 6px; transition: opacity 0.2s;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* LAYOUT */
+  .main { display: grid; grid-template-columns: 1fr 380px; gap: 0; min-height: calc(100vh - 70px); }
+  @media(max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  /* LEFT PANEL */
+  .left-panel { padding: 20px; border-right: 1px solid var(--border); }
+
+  /* MARKET STATS BAR */
+  .market-bar {
+    display: flex; gap: 12px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;
+  }
+  .market-stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 16px; min-width: 130px; flex-shrink: 0;
+  }
+  .market-stat .ms-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .market-stat .ms-value { font-size: 18px; font-weight: 700; }
+  .market-stat .ms-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* WATCHLIST TABLE */
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .watchlist-table { width: 100%; border-collapse: collapse; }
+  .watchlist-table th {
+    font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+    text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .watchlist-table th:not(:first-child) { text-align: right; }
+  .watchlist-table td {
+    padding: 11px 12px; border-bottom: 1px solid rgba(42,47,69,0.5);
+    font-size: 14px; vertical-align: middle;
+  }
+  .watchlist-table td:not(:first-child) { text-align: right; }
+  .watchlist-table tr:last-child td { border-bottom: none; }
+  .watchlist-table tr:hover td { background: rgba(79,124,255,0.05); }
+
+  .ticker-cell { display: flex; align-items: center; gap: 10px; }
+  .ticker-icon {
+    width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .ticker-name { font-weight: 600; font-size: 14px; }
+  .ticker-full { font-size: 11px; color: var(--muted); }
+  .price-cell { font-weight: 700; font-size: 15px; }
+  .change-cell { font-weight: 600; font-size: 13px; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .neu { color: var(--muted); }
+  .vol-cell { font-size: 12px; color: var(--muted); }
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .badge-reit { background: rgba(79,124,255,0.2); color: var(--accent); }
+  .badge-bank { background: rgba(245,197,66,0.2); color: var(--yellow); }
+  .badge-fmcg { background: rgba(0,200,150,0.2); color: var(--green); }
+  .badge-prop { background: rgba(124,92,252,0.2); color: var(--accent2); }
+  .badge-other { background: rgba(123,130,160,0.2); color: var(--muted); }
+
+  .loading-row td { color: var(--muted); font-size: 13px; text-align: center !important; padding: 24px; }
+  .error-row td { color: var(--red); font-size: 13px; text-align: center !important; padding: 16px; }
+
+  /* SPARKLINE */
+  .spark { width: 70px; height: 28px; }
+
+  /* RIGHT PANEL - NEWS */
+  .right-panel { display: flex; flex-direction: column; }
+
+  .news-header {
+    padding: 20px 20px 0; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .news-tabs { display: flex; gap: 2px; overflow-x: auto; padding-bottom: 0; }
+  .tab-btn {
+    background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600;
+    padding: 8px 12px; cursor: pointer; border-radius: 8px 8px 0 0; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); background: rgba(79,124,255,0.08); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .news-feed { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+  .news-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; cursor: pointer; transition: border-color 0.15s;
+    text-decoration: none; color: inherit; display: block;
+  }
+  .news-card:hover { border-color: var(--accent); }
+  .news-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .news-source {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .src-bw { background: rgba(79,124,255,0.2); color: var(--accent); }
+  .src-inq { background: rgba(255,77,106,0.2); color: var(--red); }
+  .src-pbs { background: rgba(0,200,150,0.2); color: var(--green); }
+  .src-mb { background: rgba(245,197,66,0.2); color: var(--yellow); }
+  .src-default { background: rgba(123,130,160,0.2); color: var(--muted); }
+  .news-time { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .news-title { font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--text); }
+  .news-excerpt { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+  .news-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .news-tag { font-size: 10px; background: rgba(79,124,255,0.15); color: var(--accent); padding: 2px 6px; border-radius: 4px; }
+
+  .news-loading { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 20px; }
+  .news-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 20px; }
+
+  /* CHART MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    width: 90vw; max-width: 700px; max-height: 85vh; overflow-y: auto;
+    padding: 24px; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; background: none; border: none;
+    color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* STATUS */
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .status-live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  .status-delayed { background: var(--yellow); }
+  .status-error { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* FOOTER */
+  .footer { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+
+  /* GAINERS/LOSERS */
+  .gl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .gl-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .gl-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .gl-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+  .gl-item:not(:last-child) { border-bottom: 1px solid rgba(42,47,69,0.5); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">PH Stocks <span>Philippine Market Dashboard</span></div>
+    <div class="psei-chip">
+      <div>
+        <div class="label">PSEi</div>
+        <div class="value" id="psei-val">â€”</div>
+      </div>
+      <div class="change neu" id="psei-chg">â€”</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="last-update">
+      <span class="status-dot status-live" id="status-dot"></span>
+      <span id="last-update-time">Loading...</span>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">
+      <span id="refresh-icon">â†»</span> Refresh
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- LEFT: PRICES + MARKET STATS -->
+  <div class="left-panel">
+
+    <!-- MARKET BAR -->
+    <div class="market-bar" id="market-bar">
+      <div class="market-stat"><div class="ms-label">Volume</div><div class="ms-value" id="stat-vol">â€”</div><div class="ms-sub">shares traded</div></div>
+      <div class="market-stat"><div class="ms-label">Value</div><div class="ms-value" id="stat-val">â€”</div><div class="ms-sub">PHP traded</div></div>
+      <div class="market-stat"><div class="ms-label">Advances</div><div class="ms-value pos" id="stat-adv">â€”</div><div class="ms-sub">stocks up</div></div>
+      <div class="market-stat"><div class="ms-label">Declines</div><div class="ms-value neg" id="stat-dec">â€”</div><div class="ms-sub">stocks down</div></div>
+      <div class="market-stat"><div class="ms-label">Unchanged</div><div class="ms-value neu" id="stat-unc">â€”</div><div class="ms-sub">stocks flat</div></div>
+    </div>
+
+    <!-- WATCHLIST -->
+    <div class="section-title">My Watchlist</div>
+    <table class="watchlist-table">
+      <thead>
+        <tr>
+          <th>Stock</th>
+          <th>Price (PHP)</th>
+          <th>Change</th>
+          <th>% Chg</th>
+          <th>Volume</th>
+          <th>52W</th>
+        </tr>
+      </thead>
+      <tbody id="watchlist-body">
+        <tr class="loading-row"><td colspan="6">âŸ³ Fetching prices from Yahoo Finance...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- GAINERS / LOSERS -->
+    <div class="divider"></div>
+    <div class="gl-row" id="gl-row">
+      <div class="gl-card">
+        <div class="gl-title">Top Gainers (Watchlist)</div>
+        <div id="gl-gainers"><div style="color:var(--muted);font-size:12px">Loading...</div></div>
+      </div>
+      <div class="gl-card">
+        <div class="gl-title">Top Losers (Watchlist)</div>
+        <div id="gl-losers"><div style="color:var(--muted);font-size:12px">Loading...</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: NEWS -->
+  <div class="right-panel">
+    <div class="news-header">
+      <div class="news-tabs" id="news-tabs">
+        <button class="tab-btn active" onclick="filterNews('all')" data-tab="all">All News</button>
+        <button class="tab-btn" onclick="filterNews('BDO')" data-tab="BDO">BDO</button>
+        <button class="tab-btn" onclick="filterNews('AREIT')" data-tab="AREIT">AREIT</button>
+        <button class="tab-btn" onclick="filterNews('RFM')" data-tab="RFM">RFM</button>
+        <button class="tab-btn" onclick="filterNews('RCR')" data-tab="RCR">RCR</button>
+        <button class="tab-btn" onclick="filterNews('DDMPR')" data-tab="DDMPR">DDMPR</button>
+        <button class="tab-btn" onclick="filterNews('VREIT')" data-tab="VREIT">VREIT</button>
+        <button class="tab-btn" onclick="filterNews('VLL')" data-tab="VLL">VLL</button>
+        <button class="tab-btn" onclick="filterNews('DNL')" data-tab="DNL">DNL</button>
+        <button class="tab-btn" onclick="filterNews('LTG')" data-tab="LTG">LTG</button>
+        <button class="tab-btn" onclick="filterNews('SGP')" data-tab="SGP">SGP</button>
+      </div>
+    </div>
+    <div class="news-feed" id="news-feed">
+      <div class="news-loading">âŸ³ Fetching latest Philippine financial news...</div>
+    </div>
+    <div class="footer">News from BusinessWorld, Inquirer, PhilStar, Manila Bulletin Â· Prices via Yahoo Finance Â· Delayed ~15 min</div>
+  </div>
+</div>
+
+<!-- CHART MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">âœ•</button>
+    <div class="modal-title" id="modal-title">â€”</div>
+    <div class="modal-sub" id="modal-sub">â€”</div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const WATCHLIST = [
+  { ticker: 'BDO',   yf: 'BDO',   name: 'BDO Unibank',           sector: 'bank',  color: '#4f7cff' },
+  { ticker: 'AREIT', yf: 'AREIT',  name: 'Ayala REIT',            sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'RFM',   yf: 'RFM',    name: 'RFM Corporation',       sector: 'fmcg',  color: '#00c896' },
+  { ticker: 'RCR',   yf: 'RCR',    name: 'RL Commercial REIT',    sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'DDMPR', yf: 'DDMPR',  name: 'DoubleDragon REIT',     sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'VREIT', yf: 'VREIT',  name: 'Villar REIT',           sector: 'reit',  color: '#7c5cfc' },
+  { ticker: 'VLL',   yf: 'VLL',    name: 'Vista Land',            sector: 'prop',  color: '#f5c542' },
+  { ticker: 'DNL',   yf: 'DNL',    name: 'D&L Industries',        sector: 'fmcg',  color: '#00c896' },
+  { ticker: 'LTG',   yf: 'LTG',    name: 'LT Group',              sector: 'other', color: '#ff7043' },
+  { ticker: 'SGP',   yf: 'SGP',    name: 'Synergy Grid & Dev.',   sector: 'other', color: '#26c6da' },
+];
+
+const SECTOR_BADGE = { reit: 'badge-reit', bank: 'badge-bank', fmcg: 'badge-fmcg', prop: 'badge-prop', other: 'badge-other' };
+const SECTOR_LABEL = { reit: 'REIT', bank: 'BANK', fmcg: 'FMCG', prop: 'PROP', other: 'HOLD' };
+
+const NEWS_FEEDS = [
+  { url: 'https://www.bworldonline.com/feed/', name: 'BusinessWorld', cls: 'src-bw' },
+  { url: 'https://business.inquirer.net/feed', name: 'Inquirer Biz', cls: 'src-inq' },
+  { url: 'https://www.philstar.com/rss/business', name: 'PhilStar', cls: 'src-pbs' },
+  { url: 'https://mb.com.ph/category/business/feed/', name: 'Manila Bulletin', cls: 'src-mb' },
+];
+
+// Data served by Vercel API routes â€” no CORS issues
+
+// ===================== STATE =====================
+let allNews = [];
+let priceData = {};
+let currentTab = 'all';
+let refreshInterval = null;
+
+// ===================== UTILS =====================
+function fmt(n, d=2) { return n == null || isNaN(n) ? 'â€”' : Number(n).toLocaleString('en-PH', {minimumFractionDigits:d, maximumFractionDigits:d}); }
+function fmtVol(n) {
+  if (!n || isNaN(n)) return 'â€”';
+  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toString();
+}
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - new Date(date)) / 1000);
+  if (s < 60) return s+'s ago';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function chgClass(v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu'; }
+function chgSign(v) { return v > 0 ? '+' : ''; }
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+// ===================== PRICE FETCH =====================
+async function fetchPrices() {
+  const res = await fetch('/api/quotes');
+  if (!res.ok) throw new Error('Failed to fetch quotes');
+  return res.json();
+}
+
+async function loadPrices() {
+  let quotes;
+  try {
+    quotes = await fetchPrices();
+  } catch(e) {
+    document.getElementById('watchlist-body').innerHTML = `<tr class="error-row"><td colspan="6">âš  Could not fetch prices. ${e.message}</td></tr>`;
+    document.getElementById('status-dot').className = 'status-dot status-error';
+    return;
+  }
+
+  priceData = quotes;
+
+  // PSEi
+  const psei = quotes['^PSEi'];
+  if (psei) {
+    const v = psei.regularMarketPrice;
+    const c = psei.regularMarketChange;
+    const cp = psei.regularMarketChangePercent;
+    document.getElementById('psei-val').textContent = fmt(v);
+    const cc = chgClass(c);
+    document.getElementById('psei-chg').className = `change ${cc}`;
+    document.getElementById('psei-chg').textContent = `${chgSign(c)}${fmt(c)} (${chgSign(cp)}${fmt(cp)}%)`;
+  }
+
+  // Watchlist table
+  let advances = 0, declines = 0, unchanged = 0;
+  let rows = '';
+  WATCHLIST.forEach(s => {
+    const q = quotes[s.yf];
+    if (!q) {
+      rows += `<tr><td class="ticker-cell"><div class="ticker-cell">
+        <div class="ticker-icon" style="background:${s.color}">${initials(s.ticker)}</div>
+        <div><div class="ticker-name">${s.ticker}</div><div class="ticker-full">${s.name}</div></div>
+      </div></td><td colspan="5" style="color:var(--muted);font-size:12px">No data</td></tr>`;
+      return;
+    }
+    const price = q.regularMarketPrice;
+    const chg = q.regularMarketChange;
+    const chgp = q.regularMarketChangePercent;
+    const vol = q.regularMarketVolume;
+    const lo52 = q.fiftyTwoWeekLow;
+    const hi52 = q.fiftyTwoWeekHigh;
+    const cc = chgClass(chg);
+    if (chg > 0) advances++; else if (chg < 0) declines++; else unchanged++;
+
+    const range52 = lo52 && hi52 ? `${fmt(lo52)} â€“ ${fmt(hi52)}` : 'â€”';
+    rows += `<tr onclick="openModal('${s.ticker}')" style="cursor:pointer">
+      <td>
+        <div class="ticker-cell">
+          <div class="ticker-icon" style="background:${s.color}">${s.ticker.slice(0,2)}</div>
+          <div>
+            <div class="ticker-name">${s.ticker} <span class="badge ${SECTOR_BADGE[s.sector]}">${SECTOR_LABEL[s.sector]}</span></div>
+            <div class="ticker-full">${s.name}</div>
+          </div>
+        </div>
+      </td>
+      <td class="price-cell">â‚±${fmt(price)}</td>
+      <td class="change-cell ${cc}">${chgSign(chg)}${fmt(chg)}</td>
+      <td class="change-cell ${cc}">${chgSign(chgp)}${fmt(chgp)}%</td>
+      <td class="vol-cell">${fmtVol(vol)}</td>
+      <td class="vol-cell" style="font-size:11px">${range52}</td>
+    </tr>`;
+  });
+
+  document.getElementById('watchlist-body').innerHTML = rows;
+  document.getElementById('stat-adv').textContent = advances;
+  document.getElementById('stat-dec').textContent = declines;
+  document.getElementById('stat-unc').textContent = unchanged;
+
+  // Gainers / Losers
+  const sortable = WATCHLIST.map(s => {
+    const q = quotes[s.yf];
+    return { ...s, chgp: q ? q.regularMarketChangePercent : 0, price: q ? q.regularMarketPrice : 0 };
+  }).filter(s => quotes[s.yf]);
+
+  const gainers = [...sortable].sort((a,b) => b.chgp - a.chgp).slice(0,3);
+  const losers = [...sortable].sort((a,b) => a.chgp - b.chgp).slice(0,3);
+
+  document.getElementById('gl-gainers').innerHTML = gainers.map(s =>
+    `<div class="gl-item"><span>${s.ticker}</span><span class="pos">+${fmt(s.chgp)}%</span></div>`
+  ).join('');
+  document.getElementById('gl-losers').innerHTML = losers.map(s =>
+    `<div class="gl-item"><span>${s.ticker}</span><span class="neg">${fmt(s.chgp)}%</span></div>`
+  ).join('');
+
+  document.getElementById('status-dot').className = 'status-dot status-live';
+  document.getElementById('last-update-time').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
+}
+
+// ===================== NEWS FETCH =====================
+async function loadNews() {
+  document.getElementById('news-feed').innerHTML = '<div class="news-loading">âŸ³ Fetching latest Philippine financial news...</div>';
+  try {
+    const res = await fetch('/api/news');
+    allNews = await res.json();
+    if (!allNews.length) throw new Error('No articles');
+    renderNews(currentTab);
+  } catch(e) {
+    document.getElementById('news-feed').innerHTML = '<div class="news-empty">âš  Could not load news feeds.</div>';
+  }
+}
+
+function tickerKeywords(ticker) {
+  const map = {
+    'BDO': ['BDO', 'BDO Unibank', 'Banco de Oro'],
+    'AREIT': ['AREIT', 'Ayala REIT', 'Ayala Land'],
+    'RFM': ['RFM', 'RFM Corp', 'Cosmos'],
+    'RCR': ['RCR', 'RL Commercial', 'Robinsons Land'],
+    'DDMPR': ['DDMPR', 'DoubleDragon', 'DD Meridian'],
+    'VREIT': ['VREIT', 'Villar REIT', 'Vista REIT'],
+    'VLL': ['VLL', 'Vista Land', 'Brittany', 'Camella'],
+    'DNL': ['DNL', 'D&L Industries', 'D and L'],
+    'LTG': ['LTG', 'LT Group', 'Lucio Tan', 'Philippine Airlines', 'PAL'],
+    'SGP': ['SGP', 'Synergy Grid', 'National Grid', 'TransCo'],
+  };
+  return map[ticker] || [ticker];
+}
+
+function articleMatchesTicker(article, ticker) {
+  const kws = tickerKeywords(ticker);
+  const haystack = (article.title + ' ' + article.excerpt).toLowerCase();
+  return kws.some(kw => haystack.includes(kw.toLowerCase()));
+}
+
+function renderNews(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const filtered = tab === 'all' ? allNews : allNews.filter(a => articleMatchesTicker(a, tab));
+  if (filtered.length === 0) {
+    document.getElementById('news-feed').innerHTML = `<div class="news-empty">No recent news found for ${tab}.<br><span style="font-size:11px">Try "All News" or check back later.</span></div>`;
+    return;
+  }
+  document.getElementById('news-feed').innerHTML = filtered.slice(0, 30).map(a => {
+    const tags = WATCHLIST.filter(s => articleMatchesTicker(a, s.ticker)).map(s =>
+      `<span class="news-tag">${s.ticker}</span>`
+    ).join('');
+    return `<a class="news-card" href="${a.link}" target="_blank" rel="noopener">
+      <div class="news-meta">
+        <span class="news-source ${a.cls}">${a.source}</span>
+        <span class="news-time">${a.date ? timeAgo(a.date) : ''}</span>
+      </div>
+      <div class="news-title">${a.title}</div>
+      ${a.excerpt ? `<div class="news-excerpt">${a.excerpt}...</div>` : ''}
+      ${tags ? `<div class="news-tags">${tags}</div>` : ''}
+    </a>`;
+  }).join('');
+}
+
+function filterNews(tab) { renderNews(tab); }
+
+// ===================== MODAL =====================
+function openModal(ticker) {
+  const stock = WATCHLIST.find(s => s.ticker === ticker);
+  const q = priceData[stock?.yf];
+  if (!stock || !q) return;
+
+  document.getElementById('modal-title').textContent = `${ticker} â€” ${stock.name}`;
+  document.getElementById('modal-sub').textContent = `${SECTOR_LABEL[stock.sector]} Â· PSE`;
+
+  const price = q.regularMarketPrice;
+  const chg = q.regularMarketChange;
+  const chgp = q.regularMarketChangePercent;
+  const cc = chgClass(chg);
+  const lo = q.regularMarketDayLow;
+  const hi = q.regularMarketDayHigh;
+  const lo52 = q.fiftyTwoWeekLow;
+  const hi52 = q.fiftyTwoWeekHigh;
+  const vol = q.regularMarketVolume;
+
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">PRICE</div>
+        <div style="font-size:26px;font-weight:700">â‚±${fmt(price)}</div>
+        <div style="font-size:14px;font-weight:600" class="${cc}">${chgSign(chg)}${fmt(chg)} (${chgSign(chgp)}${fmt(chgp)}%)</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">DAY RANGE</div>
+        <div style="font-size:15px;font-weight:600">â‚±${fmt(lo)} â€“ â‚±${fmt(hi)}</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">52W RANGE</div>
+        <div style="font-size:15px;font-weight:600">â‚±${fmt(lo52)} â€“ â‚±${fmt(hi52)}</div>
+      </div>
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">VOLUME</div>
+      <div style="font-size:20px;font-weight:700">${fmtVol(vol)}</div>
+    </div>
+    <div class="section-title">Related News</div>
+    <div id="modal-news">
+      ${allNews.filter(a => articleMatchesTicker(a, ticker)).slice(0,5).map(a => `
+        <a class="news-card" href="${a.link}" target="_blank" rel="noopener" style="margin-bottom:10px;display:block">
+          <div class="news-meta">
+            <span class="news-source ${a.cls}">${a.source}</span>
+            <span class="news-time">${a.date ? timeAgo(a.date) : ''}</span>
+          </div>
+          <div class="news-title">${a.title}</div>
+        </a>
+      `).join('') || '<div style="color:var(--muted);font-size:13px">No specific news found.</div>'}
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay') || e.type === 'click') {
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+}
+
+// ===================== REFRESH =====================
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.className = 'spin';
+  icon.textContent = 'â†»';
+  await Promise.all([loadPrices(), loadNews()]);
+  btn.disabled = false;
+  icon.className = '';
+}
+
+// ===================== AUTO-REFRESH =====================
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    loadPrices();
+  }, 5 * 60 * 1000); // prices every 5 min
+  setInterval(() => {
+    loadNews();
+  }, 15 * 60 * 1000); // news every 15 min
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  refreshAll();
+  startAutoRefresh();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
+
