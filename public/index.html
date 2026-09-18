@@ -71,6 +71,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .badge-fmcg{background:rgba(16,216,138,.2);color:var(--green)}
 .badge-prop{background:rgba(139,92,246,.2);color:var(--accent2)}
 .badge-util{background:rgba(6,182,212,.2);color:var(--cyan)}
+.badge-telco{background:rgba(249,115,22,.2);color:#f97316}
+.badge-infra{background:rgba(139,92,246,.2);color:#8b5cf6}
 .badge-other{background:rgba(100,116,139,.2);color:var(--muted)}
 
 .divider{height:1px;background:var(--border);margin:18px 0}
@@ -213,6 +215,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <button class="tab-btn" onclick="filterNews('LTG')"   data-tab="LTG">LTG</button>
         <button class="tab-btn" onclick="filterNews('SGP')"   data-tab="SGP">SGP</button>
         <button class="tab-btn" onclick="filterNews('MYNLD')" data-tab="MYNLD">MYNLD</button>
+        <button class="tab-btn" onclick="filterNews('UBP')"   data-tab="UBP">UBP</button>
+        <button class="tab-btn" onclick="filterNews('CNVRG')" data-tab="CNVRG">CNVRG</button>
+        <button class="tab-btn" onclick="filterNews('CNPF')"  data-tab="CNPF">CNPF</button>
+        <button class="tab-btn" onclick="filterNews('MPI')"   data-tab="MPI">MPI</button>
       </div>
     </div>
     <div class="news-feed" id="news-feed"><div class="news-loading">Loading news...</div></div>
@@ -241,11 +247,15 @@ const WATCHLIST = [
   {ticker:'DNL',   yf:'DNL',   name:'D&L Industries',       sector:'fmcg', color:'#00c896'},
   {ticker:'LTG',   yf:'LTG',   name:'LT Group',             sector:'other',color:'#ff7043'},
   {ticker:'SGP',   yf:'SGP',   name:'Synergy Grid & Dev.',  sector:'other',color:'#26c6da'},
-  {ticker:'MYNLD', yf:'MYNLD', name:'Maynilad Water',       sector:'util', color:'#0ea5e9'},
+  {ticker:'MYNLD', yf:'MYNLD', name:'Maynilad Water',        sector:'util',  color:'#0ea5e9'},
+  {ticker:'UBP',   yf:'UBP',   name:'UnionBank',             sector:'bank',  color:'#2563eb'},
+  {ticker:'CNVRG', yf:'CNVRG', name:'Converge ICT',          sector:'telco', color:'#f97316'},
+  {ticker:'CNPF',  yf:'CNPF',  name:'Century Pacific Food',  sector:'fmcg',  color:'#10b981'},
+  {ticker:'MPI',   yf:'MPI',   name:'Metro Pacific Inv.',    sector:'infra', color:'#8b5cf6'},
 ];
 
-const SB = {reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',util:'badge-util',other:'badge-other'};
-const SL = {reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',util:'UTIL',other:'HOLD'};
+const SB = {reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',util:'badge-util',telco:'badge-telco',infra:'badge-infra',other:'badge-other'};
+const SL = {reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',util:'UTIL',telco:'TELCO',infra:'INFRA',other:'HOLD'};
 
 // Dividend reference data — updated Aug 2026
 // exDate/payDate = most recently declared; freq reflects actual 2026 payment cadence
@@ -261,6 +271,10 @@ const DIVS = {
   LTG:   {freq:'Quarterly',   amount:0.30,    exDate:'2026-09-07', payDate:'2026-09-18', yield:null},
   SGP:   {freq:'Quarterly',   amount:0.3474,  exDate:'2026-07-07', payDate:'2026-07-24', yield:null},
   MYNLD: {freq:'Annual',      amount:1.14,    exDate:'2026-03-06', payDate:'2026-03-18', yield:null},
+  UBP:   {freq:'Quarterly',  amount:0.50,    exDate:'2026-09-10', payDate:'2026-09-24', yield:null},
+  CNVRG: {freq:'Annual',     amount:0.1052,  exDate:'2026-06-05', payDate:'2026-06-20', yield:null},
+  CNPF:  {freq:'Quarterly',  amount:0.21,    exDate:'2026-08-19', payDate:'2026-09-03', yield:null},
+  MPI:   {freq:'Annual',     amount:0.035,   exDate:'2026-05-07', payDate:'2026-05-23', yield:null},
 };
 
 // News keywords per ticker
@@ -276,6 +290,10 @@ const KW = {
   LTG:   ['LTG','LT Group','Lucio Tan','Philippine Airlines','PAL','Tanduay','Asia Brewery','Philippine National Bank','PNB'],
   SGP:   ['SGP','Synergy Grid','National Grid','TransCo','NGCP'],
   MYNLD: ['Maynilad','MYNLD','Maynilad Water','Metro Manila water','MWSS','water concessionaire'],
+  UBP:   ['UBP','UnionBank','Union Bank of the Philippines','EON'],
+  CNVRG: ['CNVRG','Converge','Converge ICT','fiber broadband','fixed broadband'],
+  CNPF:  ['CNPF','Century Pacific','Century Tuna','Swift','Blue Bay','coconut milk'],
+  MPI:   ['MPI','Metro Pacific','MPIC','NLEX','Cavitex','Cardinal Health','Metro Pacific Health'],
 };
 
 let allNews = [], priceData = {}, currentTab = 'all';

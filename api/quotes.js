@@ -1,6 +1,6 @@
 const https = require('https');
 
-const TICKERS = ['BDO','AREIT','RFM','RCR','DDMPR','VREIT','VLL','DNL','LTG','SGP','MYNLD'];
+const TICKERS = ['BDO','AREIT','RFM','RCR','DDMPR','VREIT','VLL','DNL','LTG','SGP','MYNLD','UBP','CNVRG','CNPF','MPI'];
 
 function get(url) {
   return new Promise((resolve, reject) => {
