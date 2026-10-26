@@ -528,6 +528,11 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(out));
 
+  } else if (req.url?.startsWith('/api/analysis')) {
+    const ticker = new URL(req.url, 'http://localhost').searchParams.get('ticker') || '';
+    const analysisHandler = require('./api/analysis.js');
+    await analysisHandler({ query: { ticker } }, { setHeader: cors, status: (c) => ({ json: (d) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(d)); } }) });
+
   } else if (req.url === '/api/news') {
     const data = await getNews();
     cors();

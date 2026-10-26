@@ -2,8 +2,9 @@
   "version": 2,
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/api/quotes", "destination": "/api/quotes" },
-    { "source": "/api/news",   "destination": "/api/news"   },
+    { "source": "/api/quotes",   "destination": "/api/quotes"   },
+    { "source": "/api/news",     "destination": "/api/news"     },
+    { "source": "/api/analysis", "destination": "/api/analysis" },
     { "source": "/(.*)",       "destination": "/index.html" }
   ]
 }
