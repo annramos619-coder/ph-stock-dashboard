@@ -769,11 +769,36 @@ async function openCryptoModal(symbol){
   }
 }
 
+function cryptoVerdict(d){
+  const signals=[];
+  let score=0;
+  // Momentum signals
+  if(d.chg24h!=null){if(d.chg24h>2){score+=1;signals.push({label:'24h up '+fmt(d.chg24h,1)+'%',bull:true});}else if(d.chg24h<-2){score-=1;signals.push({label:'24h down '+fmt(d.chg24h,1)+'%',bull:false});}}
+  if(d.chg7d!=null){if(d.chg7d>5){score+=2;signals.push({label:'7d up '+fmt(d.chg7d,1)+'%',bull:true});}else if(d.chg7d<-5){score-=2;signals.push({label:'7d down '+fmt(d.chg7d,1)+'%',bull:false});}}
+  if(d.chg30d!=null){if(d.chg30d>10){score+=2;signals.push({label:'30d up '+fmt(d.chg30d,1)+'%',bull:true});}else if(d.chg30d<-10){score-=2;signals.push({label:'30d down '+fmt(d.chg30d,1)+'%',bull:false});}}
+  if(d.chg1y!=null){if(d.chg1y>30){score+=1;signals.push({label:'1Y up '+fmt(d.chg1y,1)+'%',bull:true});}else if(d.chg1y<-30){score-=1;signals.push({label:'1Y down '+fmt(d.chg1y,1)+'%',bull:false});}}
+  // Volume activity
+  if(d.volMcapRatio!=null){if(d.volMcapRatio>0.08){score+=1;signals.push({label:'High trading volume',bull:true});}else if(d.volMcapRatio<0.01){score-=1;signals.push({label:'Very low trading volume',bull:false});}}
+  // Sentiment
+  if(d.sentiment!=null){if(d.sentiment>75){score+=1;signals.push({label:'Bullish sentiment '+fmt(d.sentiment,0)+'%',bull:true});}else if(d.sentiment<35){score-=1;signals.push({label:'Bearish sentiment '+fmt(d.sentiment,0)+'%',bull:false});}}
+  // ATH distance
+  if(d.athPct!=null){if(d.athPct>-20){score+=1;signals.push({label:'Near ATH ('+fmt(d.athPct,0)+'%)',bull:true});}else if(d.athPct<-70){score-=1;signals.push({label:'Far from ATH ('+fmt(d.athPct,0)+'%)',bull:false});}}
+
+  const verdict=score>=3?'bullish':score<=-3?'bearish':'neutral';
+  return {verdict,score,signals};
+}
+
 function renderCryptoModal(d,col){
   const fmtPhp=(n,dec)=>n!=null?'&#8369;'+fmt(n,dec??2):'—';
   const fmtUsd=(n)=>n!=null?'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:n>=1?2:6}):'—';
   const fmtM=(n)=>n!=null?'&#8369;'+fmtB(n):'—';
   const priceDec=d.pricePhp>=100?0:d.pricePhp>=1?2:4;
+
+  const {verdict,score,signals}=cryptoVerdict(d);
+  const verdictBg=verdict==='bullish'?'rgba(16,216,138,.12)':verdict==='bearish'?'rgba(244,63,94,.12)':'rgba(99,102,241,.1)';
+  const verdictBorder=verdict==='bullish'?'var(--green)':verdict==='bearish'?'var(--red)':'var(--accent)';
+  const verdictColor=verdict==='bullish'?'var(--green)':verdict==='bearish'?'var(--red)':'var(--accent)';
+  const verdictIcon=verdict==='bullish'?'▲ BULLISH':verdict==='bearish'?'▼ BEARISH':'◆ NEUTRAL';
 
   // Usage rating: vol/mcap > 0.1 = high activity, 0.03-0.1 = moderate, <0.03 = low
   const vmr=d.volMcapRatio;
@@ -793,6 +818,21 @@ function renderCryptoModal(d,col){
   const cats=(d.categories||[]).map(c=>`<span class="crypto-cat">${c}</span>`).join('');
 
   return`
+  <div style="background:${verdictBg};border:1px solid ${verdictBorder};border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Momentum Assessment</div>
+      <div style="font-size:22px;font-weight:700;color:${verdictColor};letter-spacing:-.3px">${verdictIcon}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">
+        ${signals.map(s=>`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:${s.bull?'rgba(16,216,138,.15)':'rgba(244,63,94,.15)'};color:${s.bull?'var(--green)':'var(--red)'}">${s.label}</span>`).join('')}
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Score</div>
+      <div style="font-size:28px;font-weight:700;color:${verdictColor}">${score>0?'+':''}${score}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">of ±8 max</div>
+    </div>
+  </div>
+
   <div style="background:var(--card2);border-radius:10px;padding:14px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
       <div>
