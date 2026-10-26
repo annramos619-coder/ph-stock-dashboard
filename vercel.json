@@ -6,6 +6,7 @@
     { "source": "/api/news",     "destination": "/api/news"     },
     { "source": "/api/analysis",    "destination": "/api/analysis"    },
     { "source": "/api/disclosures", "destination": "/api/disclosures" },
+    { "source": "/api/crypto",      "destination": "/api/crypto"      },
     { "source": "/(.*)",       "destination": "/index.html" }
   ]
 }

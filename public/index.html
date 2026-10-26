@@ -185,6 +185,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .div-modal-item .dval.highlight{color:var(--yellow)}
 /* loading skeleton */
 .an-loading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+/* crypto section */
+.crypto-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.crypto-table th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+.crypto-table th:not(:first-child){text-align:right}
+.crypto-table td{padding:10px 10px;border-bottom:1px solid rgba(37,45,66,.5);font-size:13px;vertical-align:middle}
+.crypto-table td:not(:first-child){text-align:right}
+.crypto-table tr:last-child td{border-bottom:none}
+.crypto-table tr:hover td{background:rgba(99,102,241,.05)}
+.crypto-icon{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.crypto-cell{display:flex;align-items:center;gap:8px}
+.crypto-name{font-weight:600;font-size:13px}
+.crypto-sym{font-size:10px;color:var(--muted);margin-top:1px}
 /* intelligence panel */
 .intel-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:block;text-decoration:none;color:inherit;transition:border-color .15s}
 .intel-card:hover{border-color:var(--accent)}
@@ -251,6 +263,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="section-title">Dividend Calendar <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">&#9432; estimated / historical</span></div>
     <div class="div-grid" id="div-grid"></div>
 
+    <div class="divider"></div>
+    <div class="section-title">Crypto <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">prices in PHP · via CoinGecko</span></div>
+    <table class="crypto-table">
+      <thead><tr><th>Coin</th><th>Price (PHP)</th><th>24h</th><th>7d</th><th>Volume 24h</th></tr></thead>
+      <tbody id="crypto-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">⟳ Loading crypto...</td></tr></tbody>
+    </table>
+
   </div>
 
   <div class="right-panel">
@@ -272,7 +291,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       </div>
     </div>
     <div class="news-feed" id="news-feed"><div class="news-loading">Loading news...</div></div>
-    <div class="footer">Prices: phisix-api &middot; News: BusinessWorld, Inquirer, PhilStar, Manila Bulletin &middot; ~15 min delayed</div>
+    <div class="footer">Prices: Investagrams · Crypto: CoinGecko · News: BusinessWorld, Inquirer, PhilStar, Manila Bulletin</div>
   </div>
 </div>
 
@@ -413,6 +432,32 @@ function renderDividends(){
       <div class="div-note">* est. from historical data</div>
     </div>`;
   }).join('');
+}
+
+const CRYPTO_COLORS={BTC:'#f7931a',ETH:'#627eea',BNB:'#f3ba2f',SOL:'#9945ff',XRP:'#00aae4',ADA:'#0033ad',DOT:'#e6007a',DOGE:'#c2a633'};
+async function loadCrypto(){
+  try{
+    const r=await fetch('/api/crypto');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const coins=await r.json();
+    if(coins.error)throw new Error(coins.error);
+    document.getElementById('crypto-body').innerHTML=coins.map(c=>{
+      const col=CRYPTO_COLORS[c.symbol]||'#6366f1';
+      const chg24=c.change24h??0, chg7=c.change7d??0;
+      return `<tr>
+        <td><div class="crypto-cell">
+          <img class="crypto-icon" src="${c.image}" alt="${c.symbol}" onerror="this.style.display='none'">
+          <div><div class="crypto-name">${c.symbol}</div><div class="crypto-sym">${c.name}</div></div>
+        </div></td>
+        <td class="price-cell" style="font-family:var(--mono)">&#8369;${fmt(c.price,c.price>=100?0:c.price>=1?2:4)}</td>
+        <td class="change-cell ${cc(chg24)}">${sg(chg24)}${fmt(chg24,2)}%</td>
+        <td class="change-cell ${cc(chg7)}" style="font-size:12px">${sg(chg7)}${fmt(chg7,2)}%</td>
+        <td class="vol-cell">&#8369;${fmtB(c.volume24h)}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    document.getElementById('crypto-body').innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--muted);font-size:12px;padding:16px">&#9888; ${e.message}</td></tr>`;
+  }
 }
 
 async function loadNews(){
@@ -704,13 +749,14 @@ function closeModal(e){if(!e||e.target===document.getElementById('modal-overlay'
 async function refreshAll(){
   const btn=document.getElementById('refresh-btn'),icon=document.getElementById('refresh-icon');
   btn.disabled=true;icon.className='spin';icon.textContent='↻';
-  await Promise.all([loadPrices(),loadNews()]);
+  await Promise.all([loadPrices(),loadNews(),loadCrypto()]);
   renderDividends();
   btn.disabled=false;icon.className='';icon.textContent='↻';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   refreshAll();
   setInterval(loadPrices,5*60*1000);
+  setInterval(loadCrypto,5*60*1000);
   setInterval(()=>{loadNews();renderDividends();},15*60*1000);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
