@@ -208,7 +208,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <button class="tab-btn" onclick="filterNews('AREIT')" data-tab="AREIT">AREIT</button>
         <button class="tab-btn" onclick="filterNews('RFM')"   data-tab="RFM">RFM</button>
         <button class="tab-btn" onclick="filterNews('RCR')"   data-tab="RCR">RCR</button>
-        <button class="tab-btn" onclick="filterNews('DDMPR')" data-tab="DDMPR">DDMPR</button>
         <button class="tab-btn" onclick="filterNews('VREIT')" data-tab="VREIT">VREIT</button>
         <button class="tab-btn" onclick="filterNews('VLL')"   data-tab="VLL">VLL</button>
         <button class="tab-btn" onclick="filterNews('DNL')"   data-tab="DNL">DNL</button>
@@ -217,8 +216,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <button class="tab-btn" onclick="filterNews('MYNLD')" data-tab="MYNLD">MYNLD</button>
         <button class="tab-btn" onclick="filterNews('UBP')"   data-tab="UBP">UBP</button>
         <button class="tab-btn" onclick="filterNews('CNVRG')" data-tab="CNVRG">CNVRG</button>
-        <button class="tab-btn" onclick="filterNews('CNPF')"  data-tab="CNPF">CNPF</button>
-        <button class="tab-btn" onclick="filterNews('MPI')"   data-tab="MPI">MPI</button>
       </div>
     </div>
     <div class="news-feed" id="news-feed"><div class="news-loading">Loading news...</div></div>
@@ -241,7 +238,6 @@ const WATCHLIST = [
   {ticker:'AREIT', yf:'AREIT', name:'Ayala REIT',           sector:'reit', color:'#7c5cfc'},
   {ticker:'RFM',   yf:'RFM',   name:'RFM Corporation',      sector:'fmcg', color:'#00c896'},
   {ticker:'RCR',   yf:'RCR',   name:'RL Commercial REIT',   sector:'reit', color:'#5cb8ff'},
-  {ticker:'DDMPR', yf:'DDMPR', name:'DoubleDragon REIT',    sector:'reit', color:'#7c5cfc'},
   {ticker:'VREIT', yf:'VREIT', name:'Villar REIT',          sector:'reit', color:'#b05cfc'},
   {ticker:'VLL',   yf:'VLL',   name:'Vista Land',           sector:'prop', color:'#f5c542'},
   {ticker:'DNL',   yf:'DNL',   name:'D&L Industries',       sector:'fmcg', color:'#00c896'},
@@ -250,8 +246,6 @@ const WATCHLIST = [
   {ticker:'MYNLD', yf:'MYNLD', name:'Maynilad Water',        sector:'util',  color:'#0ea5e9'},
   {ticker:'UBP',   yf:'UBP',   name:'UnionBank',             sector:'bank',  color:'#2563eb'},
   {ticker:'CNVRG', yf:'CNVRG', name:'Converge ICT',          sector:'telco', color:'#f97316'},
-  {ticker:'CNPF',  yf:'CNPF',  name:'Century Pacific Food',  sector:'fmcg',  color:'#10b981'},
-  {ticker:'MPI',   yf:'MPI',   name:'Metro Pacific Inv.',    sector:'infra', color:'#8b5cf6'},
 ];
 
 const SB = {reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',util:'badge-util',telco:'badge-telco',infra:'badge-infra',other:'badge-other'};
@@ -264,7 +258,6 @@ const DIVS = {
   AREIT: {freq:'Quarterly',   amount:0.6300,  exDate:'2026-08-24', payDate:'2026-09-09', yield:null},
   RFM:   {freq:'Quarterly',   amount:0.08903, exDate:'2026-07-07', payDate:'2026-07-31', yield:null},
   RCR:   {freq:'Quarterly',   amount:0.1117,  exDate:'2026-08-25', payDate:'2026-09-02', yield:null},
-  DDMPR: {freq:'Quarterly',   amount:0.02425, exDate:'2026-07-30', payDate:'2026-08-27', yield:null},
   VREIT: {freq:'Quarterly',   amount:0.0380,  exDate:'2026-05-22', payDate:'2026-05-29', yield:null},
   VLL:   {freq:'Annual',      amount:0.1176,  exDate:'2026-01-15', payDate:'2026-02-06', yield:null},
   DNL:   {freq:'Annual',      amount:0.1820,  exDate:'2026-06-22', payDate:'2026-07-08', yield:null},
@@ -273,8 +266,6 @@ const DIVS = {
   MYNLD: {freq:'Annual',      amount:1.14,    exDate:'2026-03-06', payDate:'2026-03-18', yield:null},
   UBP:   {freq:'Annual',     amount:1.00,   exDate:'2026-03-13', payDate:'2026-03-23', yield:null},
   CNVRG: {freq:'Annual',     amount:0.49,   exDate:'2026-03-19', payDate:'2026-04-01', yield:null},
-  CNPF:  {freq:'Annual',     amount:0.90,   exDate:'2026-07-20', payDate:'2026-08-10', yield:null},
-  MPI:   {freq:'Quarterly',  amount:0.034,  exDate:'2026-05-07', payDate:'2026-05-23', yield:null},
 };
 
 // News keywords per ticker
@@ -283,7 +274,6 @@ const KW = {
   AREIT: ['AREIT','Ayala REIT','Ayala Land REIT'],
   RFM:   ['RFM','RFM Corp','RFM Corporation','Cosmos','Swift Foods'],
   RCR:   ['RCR','RL Commercial','Robinsons Land REIT','RL REIT'],
-  DDMPR: ['DDMPR','DDMP REIT','DoubleDragon REIT','DoubleDragon Properties'],
   VREIT: ['VREIT','VistaREIT','Villar REIT','Vista REIT'],
   VLL:   ['VLL','Vista Land','Brittany','Camella','Crown Asia','Lessandra'],
   DNL:   ['DNL','D&L Industries','D and L Industries'],
@@ -292,8 +282,6 @@ const KW = {
   MYNLD: ['Maynilad','MYNLD','Maynilad Water','Metro Manila water','MWSS','water concessionaire'],
   UBP:   ['UBP','UnionBank','Union Bank of the Philippines','EON'],
   CNVRG: ['CNVRG','Converge','Converge ICT','fiber broadband','fixed broadband'],
-  CNPF:  ['CNPF','Century Pacific','Century Tuna','Swift','Blue Bay','coconut milk'],
-  MPI:   ['MPI','Metro Pacific','MPIC','NLEX','Cavitex','Cardinal Health','Metro Pacific Health'],
 };
 
 let allNews = [], priceData = {}, currentTab = 'all';

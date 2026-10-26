@@ -11,7 +11,6 @@ const WATCHLIST = [
   { ticker: 'AREIT', yf: 'AREIT', name: 'Ayala REIT',           sector: 'reit',  color: '#7c5cfc' },
   { ticker: 'RFM',   yf: 'RFM',   name: 'RFM Corporation',      sector: 'fmcg',  color: '#00c896' },
   { ticker: 'RCR',   yf: 'RCR',   name: 'RL Commercial REIT',   sector: 'reit',  color: '#5cb8ff' },
-  { ticker: 'DDMPR', yf: 'DDMPR', name: 'DoubleDragon REIT',    sector: 'reit',  color: '#7c5cfc' },
   { ticker: 'VREIT', yf: 'VREIT', name: 'Villar REIT',          sector: 'reit',  color: '#b05cfc' },
   { ticker: 'VLL',   yf: 'VLL',   name: 'Vista Land',           sector: 'prop',  color: '#f5c542' },
   { ticker: 'DNL',   yf: 'DNL',   name: 'D&L Industries',       sector: 'fmcg',  color: '#00c896' },
@@ -20,8 +19,6 @@ const WATCHLIST = [
   { ticker: 'MYNLD', yf: 'MYNLD', name: 'Maynilad Water',        sector: 'util',  color: '#0ea5e9' },
   { ticker: 'UBP',   yf: 'UBP',   name: 'UnionBank',             sector: 'bank',  color: '#2563eb' },
   { ticker: 'CNVRG', yf: 'CNVRG', name: 'Converge ICT',          sector: 'telco', color: '#f97316' },
-  { ticker: 'CNPF',  yf: 'CNPF',  name: 'Century Pacific Food',  sector: 'fmcg',  color: '#10b981' },
-  { ticker: 'MPI',   yf: 'MPI',   name: 'Metro Pacific Inv.',     sector: 'infra', color: '#8b5cf6' },
 ];
 
 const NEWS_FEEDS = [
@@ -314,7 +311,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="tab-btn" onclick="filterNews('AREIT')" data-tab="AREIT">AREIT</button>
         <button class="tab-btn" onclick="filterNews('RFM')"   data-tab="RFM">RFM</button>
         <button class="tab-btn" onclick="filterNews('RCR')"   data-tab="RCR">RCR</button>
-        <button class="tab-btn" onclick="filterNews('DDMPR')" data-tab="DDMPR">DDMPR</button>
         <button class="tab-btn" onclick="filterNews('VREIT')" data-tab="VREIT">VREIT</button>
         <button class="tab-btn" onclick="filterNews('VLL')"   data-tab="VLL">VLL</button>
         <button class="tab-btn" onclick="filterNews('DNL')"   data-tab="DNL">DNL</button>
@@ -323,8 +319,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="tab-btn" onclick="filterNews('MYNLD')" data-tab="MYNLD">MYNLD</button>
         <button class="tab-btn" onclick="filterNews('UBP')"   data-tab="UBP">UBP</button>
         <button class="tab-btn" onclick="filterNews('CNVRG')" data-tab="CNVRG">CNVRG</button>
-        <button class="tab-btn" onclick="filterNews('CNPF')"  data-tab="CNPF">CNPF</button>
-        <button class="tab-btn" onclick="filterNews('MPI')"   data-tab="MPI">MPI</button>
       </div>
     </div>
     <div class="news-feed" id="news-feed"><div class="news-loading">⟳ Loading news...</div></div>
@@ -345,7 +339,6 @@ const WATCHLIST=[
   {ticker:'AREIT',yf:'AREIT', name:'Ayala REIT',           sector:'reit', color:'#7c5cfc'},
   {ticker:'RFM',  yf:'RFM',   name:'RFM Corporation',      sector:'fmcg', color:'#00c896'},
   {ticker:'RCR',  yf:'RCR',   name:'RL Commercial REIT',   sector:'reit', color:'#5cb8ff'},
-  {ticker:'DDMPR',yf:'DDMPR', name:'DoubleDragon REIT',    sector:'reit', color:'#7c5cfc'},
   {ticker:'VREIT',yf:'VREIT', name:'Villar REIT',          sector:'reit', color:'#b05cfc'},
   {ticker:'VLL',  yf:'VLL',   name:'Vista Land',           sector:'prop', color:'#f5c542'},
   {ticker:'DNL',  yf:'DNL',   name:'D&L Industries',       sector:'fmcg', color:'#00c896'},
@@ -354,8 +347,6 @@ const WATCHLIST=[
   {ticker:'MYNLD',yf:'MYNLD', name:'Maynilad Water',        sector:'util',  color:'#0ea5e9'},
   {ticker:'UBP',  yf:'UBP',   name:'UnionBank',             sector:'bank',  color:'#2563eb'},
   {ticker:'CNVRG',yf:'CNVRG', name:'Converge ICT',          sector:'telco', color:'#f97316'},
-  {ticker:'CNPF', yf:'CNPF',  name:'Century Pacific Food',  sector:'fmcg',  color:'#10b981'},
-  {ticker:'MPI',  yf:'MPI',   name:'Metro Pacific Inv.',    sector:'infra', color:'#8b5cf6'},
 ];
 const SB={reit:'badge-reit',bank:'badge-bank',fmcg:'badge-fmcg',prop:'badge-prop',other:'badge-other',util:'badge-util',telco:'badge-telco',infra:'badge-infra'};
 const SL={reit:'REIT',bank:'BANK',fmcg:'FMCG',prop:'PROP',other:'HOLD',util:'UTIL',telco:'TELCO',infra:'INFRA'};
@@ -418,15 +409,13 @@ async function loadNews(){
 const KW={
   BDO:['BDO','BDO Unibank','Banco de Oro'],AREIT:['AREIT','Ayala REIT'],
   RFM:['RFM','RFM Corp','Cosmos'],RCR:['RCR','RL Commercial','Robinsons Land'],
-  DDMPR:['DDMPR','DoubleDragon'],VREIT:['VREIT','Villar REIT'],
+  VREIT:['VREIT','Villar REIT'],
   VLL:['VLL','Vista Land','Brittany','Camella'],DNL:['DNL','D&L Industries'],
   LTG:['LTG','LT Group','Lucio Tan','Philippine Airlines','PAL','Tanduay','Asia Brewery','PNB'],
   SGP:['SGP','Synergy Grid','National Grid'],
   MYNLD:['MYNLD','Maynilad','MWSS','water concessionaire'],
   UBP:  ['UBP','UnionBank','Union Bank','EON'],
   CNVRG:['CNVRG','Converge','Converge ICT','fiber broadband'],
-  CNPF: ['CNPF','Century Pacific','Century Tuna','Swift','Blue Bay'],
-  MPI:  ['MPI','Metro Pacific','MPIC','Maynilad','NLEX','Cavitex','Cardinal Health'],
 };
 function matches(a,t){const h=(a.title+' '+a.excerpt).toLowerCase();return(KW[t]||[t]).some(k=>h.includes(k.toLowerCase()))}
 
