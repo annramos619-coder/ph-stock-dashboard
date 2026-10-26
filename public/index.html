@@ -434,7 +434,7 @@ function renderDividends(){
   }).join('');
 }
 
-const CRYPTO_COLORS={BTC:'#f7931a',ETH:'#627eea',BNB:'#f3ba2f',SOL:'#9945ff',XRP:'#00aae4',ADA:'#0033ad',DOT:'#e6007a',DOGE:'#c2a633'};
+const CRYPTO_COLORS={BTC:'#f7931a',SOL:'#9945ff',ETH:'#627eea',BNB:'#f3ba2f',ADA:'#0033ad',HBAR:'#00b8d4',SUI:'#4da2ff',POL:'#8247e5',LINK:'#375bd2',AAVE:'#b6509e',ONDO:'#6366f1'};
 async function loadCrypto(){
   try{
     const r=await fetch('/api/crypto');

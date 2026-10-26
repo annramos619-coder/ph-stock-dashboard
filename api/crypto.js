@@ -1,6 +1,6 @@
 const https = require('https');
 
-const COINS = 'bitcoin,ethereum,binancecoin,solana,ripple,cardano,polkadot,dogecoin';
+const COINS = 'bitcoin,solana,ethereum,binancecoin,cardano,hedera-hashgraph,sui,polygon-ecosystem-token,chainlink,aave,ondo-finance';
 
 function get(url) {
   return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ function get(url) {
 
 module.exports = async (req, res) => {
   try {
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=php&ids=${COINS}&order=market_cap_desc&per_page=8&page=1&sparkline=false&price_change_percentage=1h,24h,7d`;
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=php&ids=${COINS}&order=market_cap_desc&per_page=11&page=1&sparkline=false&price_change_percentage=1h,24h,7d`;
     const { status, body } = await get(url);
     if (status !== 200) throw new Error(`CoinGecko returned ${status}`);
 
