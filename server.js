@@ -533,6 +533,16 @@ http.createServer(async (req, res) => {
     const analysisHandler = require('./api/analysis.js');
     await analysisHandler({ query: { ticker } }, { setHeader: cors, status: (c) => ({ json: (d) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(d)); } }) });
 
+  } else if (req.url?.startsWith('/api/disclosures')) {
+    const ticker2 = new URL(req.url, 'http://localhost').searchParams.get('ticker') || '';
+    const discHandler = require('./api/disclosures.js');
+    const fakeRes = {
+      _status: 200, _headers: {},
+      setHeader(k,v){ this._headers[k]=v; },
+      status(c){ this._status=c; return { json: (d) => { res.writeHead(this._status, {'Content-Type':'application/json',...this._headers}); res.end(JSON.stringify(d)); } }; },
+    };
+    await discHandler({ query: { ticker: ticker2 } }, fakeRes);
+
   } else if (req.url === '/api/news') {
     const data = await getNews();
     cors();

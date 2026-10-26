@@ -185,6 +185,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .div-modal-item .dval.highlight{color:var(--yellow)}
 /* loading skeleton */
 .an-loading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+/* intelligence panel */
+.intel-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:block;text-decoration:none;color:inherit;transition:border-color .15s}
+.intel-card:hover{border-color:var(--accent)}
+.intel-signals{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.signal-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.3px;text-transform:uppercase}
+.intel-title{font-size:12px;font-weight:600;line-height:1.45;color:var(--text)}
+.intel-meta{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:10px;color:var(--muted)}
+.intel-loading{text-align:center;padding:16px;color:var(--muted);font-size:12px}
 
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
@@ -480,7 +488,24 @@ function rsiGauge(rsi){
   const col=rsi<30?'var(--green)':rsi>70?'var(--red)':'var(--yellow)';
   return`<div class="rsi-bar"><div class="rsi-dot" style="left:${pct}%;background:${col}"></div></div>`;
 }
-function renderAnalysis(a,ticker){
+function renderIntelligence(disc){
+  if(!disc||!disc.items||!disc.items.length) return `<div style="color:var(--muted);font-size:12px;padding:8px 0">No intelligence signals found.</div>`;
+  const flagged=disc.items.filter(i=>i.signals&&i.signals.length);
+  const rest=disc.items.filter(i=>!i.signals||!i.signals.length).slice(0,3);
+  const rows=[...flagged,...rest].slice(0,10);
+  return rows.map(item=>{
+    const badges=(item.signals||[]).map(s=>`<span class="signal-badge" style="background:${s.color}22;color:${s.color}">${s.label}</span>`).join('');
+    const src=item.source?`<span>${item.source}</span>`:'';
+    const t=item.date?ago(item.date):'';
+    return `<a class="intel-card" href="${item.link}" target="_blank" rel="noopener noreferrer">
+      ${badges?`<div class="intel-signals">${badges}</div>`:''}
+      <div class="intel-title">${item.title}</div>
+      <div class="intel-meta">${src}${src&&t?'·':''}${t?`<span>${t}</span>`:''}</div>
+    </a>`;
+  }).join('');
+}
+
+function renderAnalysis(a,ticker,disc){
   const s=WATCHLIST.find(x=>x.ticker===ticker);
   const d=DIVS[ticker];
   const v=getVerdict(a);
@@ -641,6 +666,12 @@ function renderAnalysis(a,ticker){
     </div>
   </div>`:''}
 
+  <div class="an-section">
+    <div class="an-title">🔍 Company Intelligence</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Insider moves · buybacks · acquisitions · expansions · regulatory · earnings</div>
+    ${disc!==undefined?renderIntelligence(disc):`<div class="intel-loading">⟳ Loading intelligence feed...</div>`}
+  </div>
+
   <div class="section-title" style="margin:14px 0 10px">Related News</div>
   ${allNews.filter(a2=>matches(a2,ticker)).slice(0,5).map(n=>`
     <a class="news-card" href="${n.link}" target="_blank" rel="noopener noreferrer" style="margin-bottom:8px;display:block">
@@ -658,10 +689,12 @@ async function openModal(ticker){
   document.getElementById('modal-content').innerHTML=`<div class="an-loading">⟳ Loading analysis...</div>`;
   document.getElementById('modal-overlay').classList.add('show');
   try{
-    const r=await fetch(`/api/analysis?ticker=${ticker}`);
-    const a=await r.json();
-    if(a.error)throw new Error(a.error);
-    document.getElementById('modal-content').innerHTML=renderAnalysis(a,ticker);
+    const [ar,dr]=await Promise.all([
+      fetch(`/api/analysis?ticker=${ticker}`).then(r=>r.json()),
+      fetch(`/api/disclosures?ticker=${ticker}`).then(r=>r.json()).catch(()=>null),
+    ]);
+    if(ar.error)throw new Error(ar.error);
+    document.getElementById('modal-content').innerHTML=renderAnalysis(ar,ticker,dr);
   }catch(e){
     document.getElementById('modal-content').innerHTML=`<div class="an-loading" style="color:var(--red)">⚠ Could not load analysis: ${e.message}</div>`;
   }

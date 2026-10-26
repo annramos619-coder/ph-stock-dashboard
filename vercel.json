@@ -4,7 +4,8 @@
   "rewrites": [
     { "source": "/api/quotes",   "destination": "/api/quotes"   },
     { "source": "/api/news",     "destination": "/api/news"     },
-    { "source": "/api/analysis", "destination": "/api/analysis" },
+    { "source": "/api/analysis",    "destination": "/api/analysis"    },
+    { "source": "/api/disclosures", "destination": "/api/disclosures" },
     { "source": "/(.*)",       "destination": "/index.html" }
   ]
 }
