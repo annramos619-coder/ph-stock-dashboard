@@ -197,6 +197,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .crypto-cell{display:flex;align-items:center;gap:8px}
 .crypto-name{font-weight:600;font-size:13px}
 .crypto-sym{font-size:10px;color:var(--muted);margin-top:1px}
+/* crypto modal */
+.crypto-cat{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(99,102,241,.15);color:var(--accent);margin:2px 2px 0 0}
+.usage-bar-wrap{background:var(--border);border-radius:4px;height:6px;margin-top:5px;overflow:hidden}
+.usage-bar{height:100%;border-radius:4px;transition:width .4s}
+.crypto-news-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:block;text-decoration:none;color:inherit;transition:border-color .15s}
+.crypto-news-card:hover{border-color:var(--accent)}
 /* intelligence panel */
 .intel-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:block;text-decoration:none;color:inherit;transition:border-color .15s}
 .intel-card:hover{border-color:var(--accent)}
@@ -442,9 +448,8 @@ async function loadCrypto(){
     const coins=await r.json();
     if(coins.error)throw new Error(coins.error);
     document.getElementById('crypto-body').innerHTML=coins.map(c=>{
-      const col=CRYPTO_COLORS[c.symbol]||'#6366f1';
       const chg24=c.change24h??0, chg7=c.change7d??0;
-      return `<tr>
+      return `<tr onclick="openCryptoModal('${c.symbol}')" style="cursor:pointer">
         <td><div class="crypto-cell">
           <img class="crypto-icon" src="${c.image}" alt="${c.symbol}" onerror="this.style.display='none'">
           <div><div class="crypto-name">${c.symbol}</div><div class="crypto-sym">${c.name}</div></div>
@@ -745,6 +750,120 @@ async function openModal(ticker){
   }
 }
 function closeModal(e){if(!e||e.target===document.getElementById('modal-overlay'))document.getElementById('modal-overlay').classList.remove('show')}
+
+async function openCryptoModal(symbol){
+  const col=CRYPTO_COLORS[symbol]||'#6366f1';
+  document.getElementById('modal-title').innerHTML=`<span style="color:${col}">⬡</span> ${symbol}`;
+  document.getElementById('modal-sub').textContent='Cryptocurrency · CoinGecko';
+  document.getElementById('modal-content').innerHTML=`<div class="an-loading">⟳ Loading ${symbol} data...</div>`;
+  document.getElementById('modal-overlay').classList.add('show');
+  try{
+    const r=await fetch(`/api/crypto-detail?ticker=${symbol}`);
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    document.getElementById('modal-title').innerHTML=`<span style="color:${col}">⬡</span> ${d.name} <span style="font-size:14px;color:var(--muted);font-weight:400">${symbol}</span>`;
+    document.getElementById('modal-sub').textContent=`Rank #${d.rank||'—'} · Crypto · CoinGecko`;
+    document.getElementById('modal-content').innerHTML=renderCryptoModal(d,col);
+  }catch(e){
+    document.getElementById('modal-content').innerHTML=`<div class="an-loading" style="color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+function renderCryptoModal(d,col){
+  const fmtPhp=(n,dec)=>n!=null?'&#8369;'+fmt(n,dec??2):'—';
+  const fmtUsd=(n)=>n!=null?'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:n>=1?2:6}):'—';
+  const fmtM=(n)=>n!=null?'&#8369;'+fmtB(n):'—';
+  const priceDec=d.pricePhp>=100?0:d.pricePhp>=1?2:4;
+
+  // Usage rating: vol/mcap > 0.1 = high activity, 0.03-0.1 = moderate, <0.03 = low
+  const vmr=d.volMcapRatio;
+  const usageLabel=vmr==null?'—':vmr>0.1?'High Activity':vmr>0.03?'Moderate':'Low Activity';
+  const usageClass=vmr==null?'neu':vmr>0.1?'pos':vmr>0.03?'neu':'neg';
+  const usageBarPct=vmr!=null?Math.min(vmr/0.2*100,100):0;
+
+  // Supply inflation signal
+  const circPct=d.circPct;
+  const supplyLabel=d.max==null?'Unlimited supply':circPct>=90?'Near max supply':circPct>=60?'Moderate supply':'Early circulation';
+  const supplyClass=d.max==null?'neg':circPct>=90?'pos':circPct>=60?'neu':'warn';
+
+  // Sentiment
+  const sent=d.sentiment;
+  const sentColor=sent==null?'var(--muted)':sent>=70?'var(--green)':sent>=40?'var(--yellow)':'var(--red)';
+
+  const cats=(d.categories||[]).map(c=>`<span class="crypto-cat">${c}</span>`).join('');
+
+  return`
+  <div style="background:var(--card2);border-radius:10px;padding:14px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">PRICE</div>
+        <div style="font-size:28px;font-weight:700;font-family:var(--mono)">${fmtPhp(d.pricePhp,priceDec)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtUsd(d.priceUsd)} USD</div>
+      </div>
+      <div style="text-align:right">
+        <div class="change-cell ${cc(d.chg24h)}" style="font-size:16px;font-weight:700">${sg(d.chg24h)}${fmt(d.chg24h,2)}% <span style="font-size:11px;font-weight:400">24h</span></div>
+        <div class="change-cell ${cc(d.chg7d)}" style="font-size:13px;margin-top:3px">${sg(d.chg7d)}${fmt(d.chg7d,2)}% <span style="font-size:11px;color:var(--muted)">7d</span></div>
+        <div class="change-cell ${cc(d.chg30d)}" style="font-size:12px;margin-top:2px">${sg(d.chg30d)}${fmt(d.chg30d,2)}% <span style="font-size:11px;color:var(--muted)">30d</span></div>
+      </div>
+    </div>
+    ${cats?`<div style="margin-top:10px">${cats}</div>`:''}
+  </div>
+
+  <div class="an-section">
+    <div class="an-title">📊 Market Data</div>
+    <div class="an-grid">
+      <div class="an-item"><div class="an-label">Market Cap</div><div class="an-val">${fmtM(d.mcap)}</div></div>
+      <div class="an-item"><div class="an-label">Volume 24h</div><div class="an-val">${fmtM(d.vol24h)}</div></div>
+      <div class="an-item"><div class="an-label">ATH (PHP)</div><div class="an-val">${fmtPhp(d.ath,priceDec)}</div></div>
+      <div class="an-item"><div class="an-label">From ATH</div><div class="an-val ${cc(d.athPct)}">${d.athPct!=null?fmt(d.athPct,1)+'%':'—'}</div></div>
+      <div class="an-item"><div class="an-label">1-Year Return</div><div class="an-val ${cc(d.chg1y)}">${d.chg1y!=null?sg(d.chg1y)+fmt(d.chg1y,1)+'%':'—'}</div></div>
+      ${d.tvlUsd!=null?`<div class="an-item"><div class="an-label">TVL (DeFi Locked)</div><div class="an-val pos">$${(d.tvlUsd/1e9).toFixed(2)}B</div></div>`:''}
+    </div>
+  </div>
+
+  <div class="an-section">
+    <div class="an-title">🔗 Usage &amp; Adoption</div>
+    <div class="an-item" style="margin-bottom:12px">
+      <div class="an-label">Trading Activity (Volume ÷ Market Cap)</div>
+      <div class="an-val ${usageClass}" style="margin-top:4px">${usageLabel} ${vmr!=null?'— '+fmt(vmr*100,1)+'%':''}</div>
+      <div class="usage-bar-wrap"><div class="usage-bar" style="width:${usageBarPct}%;background:${vmr>0.1?'var(--green)':vmr>0.03?'var(--yellow)':'var(--red)'}"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">Higher ratio = more active trading &amp; real use relative to its size</div>
+    </div>
+    <div class="an-grid">
+      <div class="an-item">
+        <div class="an-label">Circulating Supply</div>
+        <div class="an-val">${d.circ!=null?fmtB(d.circ):' —'} ${d.symbol}</div>
+        ${circPct!=null?`<div class="an-label" style="margin-top:2px">${circPct.toFixed(1)}% of total supply in market</div>`:''}
+      </div>
+      <div class="an-item">
+        <div class="an-label">Supply Signal</div>
+        <div class="an-val ${supplyClass}">${supplyLabel}</div>
+        ${d.max!=null?`<div class="an-label" style="margin-top:2px">Max cap: ${fmtB(d.max)} ${d.symbol}</div>`:'<div class="an-label" style="margin-top:2px">No hard cap — inflation risk</div>'}
+      </div>
+      ${sent!=null?`<div class="an-item"><div class="an-label">Community Sentiment</div><div class="an-val" style="color:${sentColor}">${fmt(sent,1)}% Bullish</div></div>`:''}
+    </div>
+  </div>
+
+  ${d.description?`<div class="an-section">
+    <div class="an-title">ℹ️ About ${d.name}</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6">${d.description}</div>
+    ${d.homepage?`<a href="${d.homepage}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);margin-top:8px;display:inline-block">Official site ↗</a>`:''}
+  </div>`:''}
+
+  <div class="an-section">
+    <div class="an-title">📰 Latest News</div>
+    ${d.news&&d.news.length?d.news.map(n=>`
+      <a class="crypto-news-card" href="${n.link}" target="_blank" rel="noopener noreferrer">
+        <div style="font-size:12px;font-weight:600;line-height:1.45">${n.title}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;display:flex;gap:8px">
+          ${n.source?`<span>${n.source}</span>`:''}
+          ${n.pubDate?`<span>${ago(n.pubDate)}</span>`:''}
+        </div>
+      </a>`).join('')
+    :`<div style="color:var(--muted);font-size:12px;padding:8px 0">No recent news found.</div>`}
+  </div>
+  `;
+}
 
 async function refreshAll(){
   const btn=document.getElementById('refresh-btn'),icon=document.getElementById('refresh-icon');

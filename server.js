@@ -533,6 +533,16 @@ http.createServer(async (req, res) => {
     const analysisHandler = require('./api/analysis.js');
     await analysisHandler({ query: { ticker } }, { setHeader: cors, status: (c) => ({ json: (d) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(d)); } }) });
 
+  } else if (req.url?.startsWith('/api/crypto-detail')) {
+    const ct = new URL(req.url, 'http://localhost').searchParams.get('ticker') || '';
+    const cdHandler = require('./api/crypto-detail.js');
+    const fakeResCd = {
+      _status: 200, _headers: {},
+      setHeader(k,v){ this._headers[k]=v; },
+      status(c){ this._status=c; return { json: (d) => { res.writeHead(this._status, {'Content-Type':'application/json',...this._headers}); res.end(JSON.stringify(d)); } }; },
+    };
+    await cdHandler({ query: { ticker: ct } }, fakeResCd);
+
   } else if (req.url === '/api/crypto') {
     const cryptoHandler = require('./api/crypto.js');
     const fakeRes2 = {
